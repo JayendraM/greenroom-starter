@@ -1,28 +1,10 @@
 {
-  "generatedAt": "2026-05-21T15:57:31.732Z",
+  "generatedAt": "2026-05-21T22:11:36.437Z",
   "verdicts": {
-    "stl_show_0038": {
-      "proposed_status": "signed",
-      "confidence": 0.97,
-      "reasoning": "The sign-off text 'OK. Good night.' is a clear, affirmative approval with no hedging or objection, and the notes are null with no contested issues described anywhere in the record. This is the textbook false dispute pattern.",
-      "evidence_quotes": [
-        "OK. Good night."
-      ]
-    },
-    "stl_show_0159": {
-      "proposed_status": "signed",
-      "confidence": 0.88,
-      "reasoning": "The sign-off is a thumbs-up emoji, a recognized positive sign-off in this domain. The note 'Marketing recoup pre-deducted from gross' is a factual accounting notation describing how the recoup was applied, not a contested objection, and the recoup itself is marked 'agreed' in the recoups array.",
-      "evidence_quotes": [
-        "👍",
-        "Marketing recoup pre-deducted from gross",
-        "status: agreed"
-      ]
-    },
     "stl_show_0369": {
       "proposed_status": "signed",
       "confidence": 0.95,
-      "reasoning": "The sign-off text 'ok wire monday' is a clear, positive instruction to process payment, and the note 'Backline charge waived' documents a resolved concession with no lingering objection.",
+      "reasoning": "The sign-off text 'ok wire monday' is a standard positive acknowledgment indicating agreement and payment instruction, and the note 'Backline charge waived' describes a resolved concession with no unresolved contested issue.",
       "evidence_quotes": [
         "ok wire monday",
         "Backline charge waived."
@@ -30,8 +12,8 @@
     },
     "stl_show_0359": {
       "proposed_status": "signed",
-      "confidence": 0.97,
-      "reasoning": "The sign-off text 'ok wire monday' is a classic positive approval directing payment on a specific day, with no hedging or objection. Notes are null, meaning there is no documented contested issue whatsoever.",
+      "confidence": 0.95,
+      "reasoning": "The sign-off text 'ok wire monday' is a clear, affirmative instruction to process payment, consistent with normal tour-manager sign-off language in this domain. Notes are null and there are no recoups, presenting no evidence of any contested issue.",
       "evidence_quotes": [
         "ok wire monday"
       ]
@@ -39,7 +21,7 @@
     "stl_show_0327": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text 'OK. Good night.' is a clear, unambiguous positive acknowledgment, and the notes are null with no contested issues whatsoever — this is the textbook false dispute scenario described in the audit context.",
+      "reasoning": "The sign-off text 'OK. Good night.' is a clear, unambiguous positive acknowledgment, and the notes are null with no contested issues whatsoever — this is the textbook false dispute pattern described in the audit context.",
       "evidence_quotes": [
         "OK. Good night."
       ]
@@ -47,7 +29,7 @@
     "stl_show_0226": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text is unambiguously positive ('Looks good.') and the notes are null, presenting the textbook false dispute pattern described in the audit context. There is no prose evidence of any contested issue, objection, or unresolved question.",
+      "reasoning": "The sign-off text 'Looks good.' is an unambiguous positive approval, and the notes are null with no contested issues described anywhere in the record. This is the textbook false dispute pattern.",
       "evidence_quotes": [
         "Looks good."
       ]
@@ -55,7 +37,7 @@
     "stl_show_0015": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text 'OK. Good night.' is a clear, positive acknowledgment explicitly listed as a canonical example of a valid sign-off, and the notes are null with no contested issues anywhere in the record.",
+      "reasoning": "The sign-off text 'OK. Good night.' is a clearly positive acknowledgment, and the notes are null with no contested issues described anywhere in the record. This is the textbook false dispute pattern.",
       "evidence_quotes": [
         "OK. Good night."
       ]
@@ -63,7 +45,7 @@
     "stl_show_0233": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text is an unambiguous positive acknowledgment ('Sign off.') and the notes are null, presenting the textbook false-dispute pattern described in the audit context.",
+      "reasoning": "The sign-off text is the explicit phrase 'Sign off.' with no hedging or objection, and notes are null with no contested issues anywhere in the record. This is the textbook false dispute pattern described in the audit context.",
       "evidence_quotes": [
         "Sign off."
       ]
@@ -71,7 +53,7 @@
     "stl_show_0036": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text 'Looks good.' is an unambiguous positive approval, and the notes are null with no contested issues whatsoever — this is the textbook false dispute pattern described in the audit context.",
+      "reasoning": "The sign-off text 'Looks good.' is an unambiguous positive approval, and the notes are null with no contested issues whatsoever. This is a textbook false dispute — the 'disputed' status and timestamp are the known system artifacts being audited, not evidence of a real dispute.",
       "evidence_quotes": [
         "Looks good."
       ]
@@ -79,7 +61,7 @@
     "stl_show_0447": {
       "proposed_status": "signed",
       "confidence": 0.95,
-      "reasoning": "The sign-off text is a thumbs-up emoji, a recognized positive sign-off in this domain, and the notes are null with no contested issues described anywhere in the record.",
+      "reasoning": "The sign-off text is a thumbs-up emoji ('👍'), which is an unambiguous positive sign-off in this domain, and the notes are null with no unresolved contested issues described anywhere in the record.",
       "evidence_quotes": [
         "👍"
       ]
@@ -87,7 +69,7 @@
     "stl_show_0069": {
       "proposed_status": "signed",
       "confidence": 0.95,
-      "reasoning": "The sign-off text is a thumbs-up emoji, which is an unambiguous positive sign-off per domain norms, and the notes are null with no contested issues described anywhere in the record.",
+      "reasoning": "The sign-off text is a thumbs-up emoji, which is an unambiguously positive approval in this domain, and the notes are null with no contested issues anywhere in the record. This is the textbook false dispute pattern.",
       "evidence_quotes": [
         "👍"
       ]
@@ -95,7 +77,7 @@
     "stl_show_0236": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text 'OK. Good night.' is an unambiguous positive approval, and the notes are null with no contested issues whatsoever — this is the textbook false dispute pattern described in the audit context.",
+      "reasoning": "The sign-off text 'OK. Good night.' is a clear, positive acknowledgment — explicitly listed as a textbook positive sign-off in the audit rules — and the notes are null with no contested issues whatsoever.",
       "evidence_quotes": [
         "OK. Good night."
       ]
@@ -103,15 +85,15 @@
     "stl_show_0152": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text is an unambiguous positive affirmation ('Looks good.') and the notes are null, presenting the textbook false dispute pattern described in the audit context.",
+      "reasoning": "The sign-off text is an unambiguous positive affirmation ('Looks good.') and the notes are null, presenting the textbook false dispute scenario described in the audit context. There is no prose evidence of any contested issue whatsoever.",
       "evidence_quotes": [
         "Looks good."
       ]
     },
     "stl_show_0240": {
       "proposed_status": "signed",
-      "confidence": 0.97,
-      "reasoning": "The sign-off text is a thumbs-up emoji, which is an explicit positive sign-off per domain norms, and the notes are null with no contested issues whatsoever — this is the textbook false dispute pattern described in the audit context.",
+      "confidence": 0.95,
+      "reasoning": "The sign-off text is a thumbs-up emoji, which is an unambiguous positive approval in this domain, and the notes are null with no contested issues described anywhere in the record.",
       "evidence_quotes": [
         "👍"
       ]
@@ -119,18 +101,18 @@
     "stl_show_coastal_spell_dispute": {
       "proposed_status": "disputed",
       "confidence": 0.92,
-      "reasoning": "The notes explicitly describe a real, substantive contested issue: WME's Daniel Hwang disputed the $900 marketing recoup on 3/18, a revised figure was negotiated ($12,285 vs. $11,565), but the formal revision has not been pushed into the system. The sign-off text 'OK — but flag any future marketing recoup deals' is hedged and conditional, consistent with a live dispute that reached a verbal resolution but remains unsettled in the record.",
+      "reasoning": "The sign-off text hedges with 'OK — but flag any future marketing recoup deals,' signaling conditional acceptance, and the notes explicitly describe a real, documented dollar-amount dispute: WME's Daniel Hwang contested the $900 marketing recoup on 3/18, a revised figure of $12,285 was verbally agreed upon, but the formal revision has not been pushed into the system — meaning the financials remain unresolved in the record.",
       "evidence_quotes": [
+        "OK — but flag any future marketing recoup deals",
         "Disputed by WME (Daniel Hwang) on 3/18 over the $900 marketing recoup",
         "Marcus authorized additional $720 to resolve, but the formal revision hasn't been pushed back into the system yet",
-        "Final agreed: $12,285 (vs originally calculated $11,565)",
-        "OK — but flag any future marketing recoup deals"
+        "Final agreed: $12,285 (vs originally calculated $11,565)"
       ]
     },
     "stl_show_0064": {
       "proposed_status": "signed",
-      "confidence": 0.97,
-      "reasoning": "The sign-off text is a thumbs-up emoji, which is an unambiguous positive approval in this domain, and the notes are null with no contested issues whatsoever.",
+      "confidence": 0.95,
+      "reasoning": "The sign-off text is a thumbs-up emoji ('👍'), which is an unambiguous positive approval per domain norms, and the notes are null with no contested issues present.",
       "evidence_quotes": [
         "👍"
       ]
@@ -138,7 +120,7 @@
     "stl_show_0452": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text is a thumbs-up emoji, which per domain norms is an unambiguous positive approval, and the notes are null with no contested issues anywhere in the record.",
+      "reasoning": "The sign-off text is a thumbs-up emoji, which is an unambiguous positive sign-off in this domain, and the notes are null with no contested issues of any kind.",
       "evidence_quotes": [
         "👍"
       ]
@@ -146,15 +128,15 @@
     "stl_show_0245": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text is explicitly 'Sign off.' — a textbook positive sign-off — and the notes are null with no contested issues described anywhere in the record. This is a classic false dispute with no prose evidence of any actual disagreement.",
+      "reasoning": "The sign-off text is 'Sign off.' — an explicit, unambiguous positive affirmation — and the notes are null with no contested issues anywhere in the record. This is a textbook false dispute.",
       "evidence_quotes": [
         "Sign off."
       ]
     },
     "stl_show_0007": {
       "proposed_status": "needs_human_review",
-      "confidence": 0.75,
-      "reasoning": "The TM's sign-off is clearly positive ('Looks good — TM'), but the notes explicitly flag an unresolved follow-up: the TM's assistant emailed questioning the production-overage line and Mariana has not yet responded or closed the question, leaving a live contested item open.",
+      "confidence": 0.78,
+      "reasoning": "The TM's sign-off is clearly positive ('Looks good — TM'), but the notes explicitly document an unresolved follow-up: the TM's assistant emailed Monday questioning the production-overage line, and the internal note confirms 'Haven't gotten back to it' — meaning the challenge is real, acknowledged, and open.",
       "evidence_quotes": [
         "Looks good — TM. Wire to the usual account when ready.",
         "His assistant emailed Monday questioning the production-overage line",
@@ -164,15 +146,15 @@
     "stl_show_0044": {
       "proposed_status": "signed",
       "confidence": 0.97,
-      "reasoning": "The sign-off text 'OK. Good night.' is an unambiguous positive acknowledgment, and the notes are null with no contested issues whatsoever — a textbook false dispute as described in the venue's known data-quality problem.",
+      "reasoning": "The sign-off text 'OK. Good night.' is a clear, positive acknowledgment of the settlement, and the notes are null with no contested issues whatsoever — this is a textbook false dispute caused by a workflow artifact or misclick.",
       "evidence_quotes": [
         "OK. Good night."
       ]
     },
     "stl_show_0142": {
       "proposed_status": "signed",
-      "confidence": 0.95,
-      "reasoning": "The sign-off text 'ok wire monday' is a clear, affirmative approval requesting payment by Monday — a standard informal positive sign-off in this domain. Notes are null and there are no recoups, providing zero evidence of any genuine contested issue.",
+      "confidence": 0.97,
+      "reasoning": "The sign-off text 'ok wire monday' is a textbook positive approval common in this domain, explicitly authorizing payment by wire transfer on Monday, with no notes describing any contested issue.",
       "evidence_quotes": [
         "ok wire monday"
       ]
@@ -180,7 +162,7 @@
     "stl_show_0279": {
       "proposed_status": "signed",
       "confidence": 0.95,
-      "reasoning": "The sign-off text 'ok wire monday' is a classic positive settlement acknowledgment requesting payment by wire on Monday, with no notes or contested issues of any kind. This is a textbook false dispute with a clear positive sign-off and null notes.",
+      "reasoning": "The sign-off text 'ok wire monday' is a clear, affirmative instruction to process payment, which is a recognized positive sign-off phrase in this domain. Notes are null and there are no recoups or any other prose indicating a contested issue.",
       "evidence_quotes": [
         "ok wire monday"
       ]

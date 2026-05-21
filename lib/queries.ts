@@ -16,7 +16,7 @@ import {
   venues,
   type Recoup,
 } from "@/db/schema";
-import { desc, asc, eq, sql, lte } from "drizzle-orm";
+import { desc, asc, eq, sql, lte, and } from "drizzle-orm";
 
 function todayDateString(): string {
   const d = new Date();
@@ -242,7 +242,12 @@ export async function getDisputedSettlements() {
     .from(settlements)
     .leftJoin(shows, eq(settlements.showId, shows.id))
     .leftJoin(artists, eq(shows.artistId, artists.id))
-    .where(eq(settlements.status, "disputed"))
+    .where(
+      and(
+        eq(settlements.status, "disputed"),
+        lte(shows.date, todayDateString()),
+      ),
+    )
     .orderBy(desc(shows.date));
 
   return rows.map(({ settlement, show, artist }) => {

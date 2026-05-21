@@ -1,11 +1,44 @@
+import { readFile } from "fs/promises";
+import path from "path";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { getReports } from "@/lib/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney, formatMoneyCompact } from "@/lib/format";
 
+type ReconciliationCounts = {
+  signed: number;
+  disputed: number;
+  needsReview: number;
+  total: number;
+};
+
+async function readReconciliationCounts(): Promise<ReconciliationCounts | null> {
+  try {
+    const p = path.join(process.cwd(), "data", "reconciliations.json");
+    const raw = await readFile(p, "utf-8");
+    const cache = JSON.parse(raw) as {
+      verdicts: Record<string, { proposed_status: string }>;
+    };
+    let signed = 0;
+    let disputed = 0;
+    let needsReview = 0;
+    for (const v of Object.values(cache.verdicts)) {
+      if (v.proposed_status === "signed") signed++;
+      else if (v.proposed_status === "disputed") disputed++;
+      else if (v.proposed_status === "needs_human_review") needsReview++;
+    }
+    return { signed, disputed, needsReview, total: signed + disputed + needsReview };
+  } catch {
+    return null;
+  }
+}
+
 export default async function ReportsPage() {
-  const r = await getReports();
+  const [r, recon] = await Promise.all([
+    getReports(),
+    readReconciliationCounts(),
+  ]);
 
   const dealMix = Object.entries(r.dealTypeCounts)
     .map(([type, count]) => ({
@@ -147,6 +180,93 @@ export default async function ReportsPage() {
           </div>
         </div>
       </div>
+
+      {/* Reconciliation comparison */}
+      {recon && recon.total > 0 && (() => {
+        const recorded = recon.total;
+        const realisticDenominator = recon.disputed + recon.needsReview;
+        const ratio =
+          realisticDenominator > 0
+            ? Math.round(recorded / realisticDenominator)
+            : recorded;
+        const cleared = recon.signed;
+        return (
+          <div className="mb-16">
+            <h2
+              className="font-display text-[24px] font-medium text-ink-900 mb-2"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              After AI reconciliation
+            </h2>
+            <p className="text-[13px] text-ink-500 mb-6 max-w-2xl leading-relaxed">
+              The recorded dispute rate is roughly {ratio}× the true rate. Most
+              flagged settlements were positive sign-offs that the legacy
+              workflow logged as objections.
+            </p>
+            <div className="relative overflow-hidden rounded-xl border border-ink-200/60 bg-white">
+              <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-rose-400 via-amber-300 to-brand-700" />
+              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-ink-100/80">
+                <div className="p-8">
+                  <div className="eyebrow text-[10px] text-rose-800 mb-3">
+                    Recorded — disputed settlements
+                  </div>
+                  <div
+                    className="text-[64px] font-mono tabular font-bold text-rose-800 leading-none"
+                    style={{ letterSpacing: "-0.03em" }}
+                  >
+                    {recorded}
+                  </div>
+                  <p className="text-[12.5px] text-ink-600 mt-4 leading-relaxed">
+                    What the database says happened — every settlement currently
+                    sitting in <code className="font-mono text-[10px] bg-ink-100/60 px-1 py-0.5 rounded">disputed</code> status.
+                  </p>
+                </div>
+                <div className="p-8 bg-gradient-to-br from-brand-50/30 to-canvas">
+                  <div className="eyebrow text-[10px] text-brand-700 mb-3">
+                    After AI reconciliation
+                  </div>
+                  <div className="flex items-baseline gap-3">
+                    <div
+                      className="text-[64px] font-mono tabular font-bold text-brand-700 leading-none"
+                      style={{ letterSpacing: "-0.03em" }}
+                    >
+                      {recon.disputed}
+                    </div>
+                    <div className="text-[13px] text-ink-600 leading-snug">
+                      real
+                      <br />
+                      <span className="text-ink-500">disputes</span>
+                    </div>
+                  </div>
+                  <div className="mt-5 space-y-1.5 text-[12.5px] text-ink-700">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <span className="font-mono tabular font-medium">
+                        {recon.needsReview}
+                      </span>
+                      <span className="text-ink-600">needs human review</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand-700" />
+                      <span className="font-mono tabular font-medium">
+                        {cleared}
+                      </span>
+                      <span className="text-ink-600">false disputes cleared</span>
+                    </div>
+                  </div>
+                  <Link
+                    href="/reconcile"
+                    className="inline-flex items-center gap-1 mt-6 text-[12.5px] font-medium text-brand-700 hover:text-brand-800 hover:underline"
+                  >
+                    Review the queue
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Settlement funnel */}
       <div className="mb-16">
