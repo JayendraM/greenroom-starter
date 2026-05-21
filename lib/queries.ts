@@ -230,3 +230,53 @@ export async function getReports() {
 }
 
 export type Reports = Awaited<ReturnType<typeof getReports>>;
+
+/** All settlements currently in `disputed` status, joined with artist + show date. */
+export async function getDisputedSettlements() {
+  const rows = await db
+    .select({
+      settlement: settlements,
+      show: shows,
+      artist: artists,
+    })
+    .from(settlements)
+    .leftJoin(shows, eq(settlements.showId, shows.id))
+    .leftJoin(artists, eq(shows.artistId, artists.id))
+    .where(eq(settlements.status, "disputed"))
+    .orderBy(desc(shows.date));
+
+  return rows.map(({ settlement, show, artist }) => {
+    let recoups: Recoup[] = [];
+    if (settlement.recoupsJson) {
+      try {
+        const parsed = JSON.parse(settlement.recoupsJson);
+        if (Array.isArray(parsed)) recoups = parsed;
+      } catch {
+        // Malformed JSON — ignore
+      }
+    }
+
+    return {
+      settlementId: settlement.id,
+      showId: settlement.showId,
+      artistName: artist?.name ?? null,
+      showDate: show?.date ?? null,
+      status: settlement.status,
+      signoffText: settlement.signoffText,
+      notes: settlement.notes,
+      draftedAt: settlement.draftedAt,
+      submittedAt: settlement.submittedAt,
+      reviewStartedAt: settlement.reviewStartedAt,
+      signedAt: settlement.signedAt,
+      disputedAt: settlement.disputedAt,
+      revisedAt: settlement.revisedAt,
+      finalizedAt: settlement.finalizedAt,
+      paidAt: settlement.paidAt,
+      recoups,
+    };
+  });
+}
+
+export type DisputedSettlement = Awaited<
+  ReturnType<typeof getDisputedSettlements>
+>[number];
