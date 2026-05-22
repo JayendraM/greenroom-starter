@@ -28,22 +28,27 @@ export default async function ReconcilePage() {
 
   const verdicts = cache?.verdicts ?? {};
 
-  const items: ReconcileItem[] = [];
-  for (const s of disputed) {
-    const verdict = verdicts[s.settlementId];
-    if (!verdict) continue;
-    items.push({
+  const items: ReconcileItem[] = disputed.map((s) => {
+    const base = {
       settlementId: s.settlementId,
       showId: s.showId,
       artistName: s.artistName ?? "Unknown artist",
       showDateFormatted: s.showDate ? formatShowDateFull(s.showDate) : "—",
       currentStatus: s.status,
+    };
+    const verdict = verdicts[s.settlementId];
+    if (!verdict) {
+      return { ...base, kind: "unanalyzed" as const };
+    }
+    return {
+      ...base,
+      kind: "analyzed" as const,
       proposedStatus: verdict.proposed_status,
       confidence: verdict.confidence,
       reasoning: verdict.reasoning,
       evidenceQuotes: verdict.evidence_quotes ?? [],
-    });
-  }
+    };
+  });
 
   return <ReconcileView items={items} generatedAt={cache?.generatedAt ?? null} />;
 }

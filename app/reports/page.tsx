@@ -2,7 +2,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight } from "lucide-react";
-import { getReports } from "@/lib/queries";
+import { getReports, getDisputedSettlements } from "@/lib/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatMoney, formatMoneyCompact } from "@/lib/format";
 
@@ -10,35 +10,59 @@ type ReconciliationCounts = {
   signed: number;
   disputed: number;
   needsReview: number;
-  total: number;
+  analyzed: number;
+  unanalyzed: number;
+  recorded: number;
 };
 
-async function readReconciliationCounts(): Promise<ReconciliationCounts | null> {
+async function readReconciliationCounts(
+  disputedIds: string[],
+): Promise<ReconciliationCounts | null> {
+  let verdictMap: Record<string, { proposed_status: string }> = {};
   try {
     const p = path.join(process.cwd(), "data", "reconciliations.json");
     const raw = await readFile(p, "utf-8");
     const cache = JSON.parse(raw) as {
       verdicts: Record<string, { proposed_status: string }>;
     };
-    let signed = 0;
-    let disputed = 0;
-    let needsReview = 0;
-    for (const v of Object.values(cache.verdicts)) {
-      if (v.proposed_status === "signed") signed++;
-      else if (v.proposed_status === "disputed") disputed++;
-      else if (v.proposed_status === "needs_human_review") needsReview++;
-    }
-    return { signed, disputed, needsReview, total: signed + disputed + needsReview };
+    verdictMap = cache.verdicts ?? {};
   } catch {
     return null;
   }
+
+  let signed = 0;
+  let disputed = 0;
+  let needsReview = 0;
+  let unanalyzed = 0;
+  for (const id of disputedIds) {
+    const v = verdictMap[id];
+    if (!v) {
+      unanalyzed++;
+      continue;
+    }
+    if (v.proposed_status === "signed") signed++;
+    else if (v.proposed_status === "disputed") disputed++;
+    else if (v.proposed_status === "needs_human_review") needsReview++;
+    else unanalyzed++;
+  }
+  return {
+    signed,
+    disputed,
+    needsReview,
+    analyzed: signed + disputed + needsReview,
+    unanalyzed,
+    recorded: disputedIds.length,
+  };
 }
 
 export default async function ReportsPage() {
-  const [r, recon] = await Promise.all([
+  const [r, disputedSettlements] = await Promise.all([
     getReports(),
-    readReconciliationCounts(),
+    getDisputedSettlements(),
   ]);
+  const recon = await readReconciliationCounts(
+    disputedSettlements.map((s) => s.settlementId),
+  );
 
   const dealMix = Object.entries(r.dealTypeCounts)
     .map(([type, count]) => ({
@@ -182,14 +206,15 @@ export default async function ReportsPage() {
       </div>
 
       {/* Reconciliation comparison */}
-      {recon && recon.total > 0 && (() => {
-        const recorded = recon.total;
+      {recon && recon.recorded > 0 && (() => {
+        const recorded = recon.recorded;
         const realisticDenominator = recon.disputed + recon.needsReview;
         const ratio =
-          realisticDenominator > 0
-            ? Math.round(recorded / realisticDenominator)
-            : recorded;
+          recon.analyzed > 0 && realisticDenominator > 0
+            ? Math.round(recon.analyzed / realisticDenominator)
+            : null;
         const cleared = recon.signed;
+        const allUnanalyzed = recon.analyzed === 0;
         return (
           <div className="mb-16">
             <h2
@@ -199,10 +224,51 @@ export default async function ReportsPage() {
               After AI reconciliation
             </h2>
             <p className="text-[13px] text-ink-500 mb-6 max-w-2xl leading-relaxed">
-              The recorded dispute rate is roughly {ratio}× the true rate. Most
-              flagged settlements were positive sign-offs that the legacy
-              workflow logged as objections.
+              {allUnanalyzed ? (
+                <>
+                  No cached AI verdicts match the current disputed settlements
+                  — likely because the database was reseeded since{" "}
+                  <code className="font-mono text-[10px] bg-ink-100/60 px-1 py-0.5 rounded">
+                    data/reconciliations.json
+                  </code>{" "}
+                  was generated. Run{" "}
+                  <code className="font-mono text-[10px] bg-ink-100/60 px-1 py-0.5 rounded">
+                    npm run reconcile
+                  </code>{" "}
+                  to populate this section.
+                </>
+              ) : ratio !== null ? (
+                <>
+                  Of the {recon.analyzed} settlements the model evaluated, the
+                  recorded dispute rate is roughly {ratio}× the true rate. Most
+                  flagged settlements were positive sign-offs that the legacy
+                  workflow logged as objections.
+                </>
+              ) : (
+                <>
+                  The model evaluated {recon.analyzed} settlements and didn&apos;t
+                  identify any confirmed real disputes — most flagged
+                  settlements were positive sign-offs that the legacy workflow
+                  logged as objections.
+                </>
+              )}
             </p>
+            {recon.unanalyzed > 0 && (
+              <div className="rounded-lg border border-ink-200/60 bg-ink-50/40 px-4 py-3 mb-6 text-[12.5px] text-ink-600 leading-relaxed max-w-2xl">
+                <span className="font-medium text-ink-800">
+                  {recon.unanalyzed} of {recon.recorded}
+                </span>{" "}
+                disputed settlements have no cached verdict. Run{" "}
+                <code className="font-mono text-[11px] bg-ink-100/60 px-1 py-0.5 rounded">
+                  npm run reconcile
+                </code>{" "}
+                with{" "}
+                <code className="font-mono text-[11px] bg-ink-100/60 px-1 py-0.5 rounded">
+                  ANTHROPIC_API_KEY
+                </code>{" "}
+                set to regenerate.
+              </div>
+            )}
             <div className="relative overflow-hidden rounded-xl border border-ink-200/60 bg-white">
               <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-rose-400 via-amber-300 to-brand-700" />
               <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-ink-100/80">
@@ -225,35 +291,61 @@ export default async function ReportsPage() {
                   <div className="eyebrow text-[10px] text-brand-700 mb-3">
                     After AI reconciliation
                   </div>
-                  <div className="flex items-baseline gap-3">
-                    <div
-                      className="text-[64px] font-mono tabular font-bold text-brand-700 leading-none"
-                      style={{ letterSpacing: "-0.03em" }}
-                    >
-                      {recon.disputed}
-                    </div>
-                    <div className="text-[13px] text-ink-600 leading-snug">
-                      real
-                      <br />
-                      <span className="text-ink-500">disputes</span>
-                    </div>
-                  </div>
-                  <div className="mt-5 space-y-1.5 text-[12.5px] text-ink-700">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
-                      <span className="font-mono tabular font-medium">
-                        {recon.needsReview}
-                      </span>
-                      <span className="text-ink-600">needs human review</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand-700" />
-                      <span className="font-mono tabular font-medium">
-                        {cleared}
-                      </span>
-                      <span className="text-ink-600">false disputes cleared</span>
-                    </div>
-                  </div>
+                  {allUnanalyzed ? (
+                    <>
+                      <div
+                        className="text-[40px] font-display font-medium text-ink-500 leading-none"
+                        style={{ letterSpacing: "-0.02em" }}
+                      >
+                        Not yet analyzed
+                      </div>
+                      <p className="text-[12.5px] text-ink-600 mt-4 leading-relaxed">
+                        Cached verdicts don&apos;t cover any of the current
+                        disputed settlement IDs.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-3">
+                        <div
+                          className="text-[64px] font-mono tabular font-bold text-brand-700 leading-none"
+                          style={{ letterSpacing: "-0.03em" }}
+                        >
+                          {recon.disputed}
+                        </div>
+                        <div className="text-[13px] text-ink-600 leading-snug">
+                          real
+                          <br />
+                          <span className="text-ink-500">disputes</span>
+                        </div>
+                      </div>
+                      <div className="mt-5 space-y-1.5 text-[12.5px] text-ink-700">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span className="font-mono tabular font-medium">
+                            {recon.needsReview}
+                          </span>
+                          <span className="text-ink-600">needs human review</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand-700" />
+                          <span className="font-mono tabular font-medium">
+                            {cleared}
+                          </span>
+                          <span className="text-ink-600">false disputes cleared</span>
+                        </div>
+                        {recon.unanalyzed > 0 && (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-ink-300" />
+                            <span className="font-mono tabular font-medium">
+                              {recon.unanalyzed}
+                            </span>
+                            <span className="text-ink-600">not yet analyzed</span>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                   <Link
                     href="/reconcile"
                     className="inline-flex items-center gap-1 mt-6 text-[12.5px] font-medium text-brand-700 hover:text-brand-800 hover:underline"

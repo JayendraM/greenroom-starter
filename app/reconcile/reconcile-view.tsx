@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Check, ScanSearch, Sparkles } from "lucide-react";
+import { ArrowRight, Check, HelpCircle, ScanSearch, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlainBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,27 @@ import { cn } from "@/lib/utils";
 
 export type ProposedStatus = "signed" | "disputed" | "needs_human_review";
 
-export type ReconcileItem = {
+type ReconcileItemBase = {
   settlementId: string;
   showId: string;
   artistName: string;
   showDateFormatted: string;
   currentStatus: string;
+};
+
+export type AnalyzedReconcileItem = ReconcileItemBase & {
+  kind: "analyzed";
   proposedStatus: ProposedStatus;
   confidence: number;
   reasoning: string;
   evidenceQuotes: string[];
 };
+
+export type UnanalyzedReconcileItem = ReconcileItemBase & {
+  kind: "unanalyzed";
+};
+
+export type ReconcileItem = AnalyzedReconcileItem | UnanalyzedReconcileItem;
 
 const proposedVariant: Record<
   ProposedStatus,
@@ -48,12 +58,23 @@ export function ReconcileView({
       return next;
     });
 
-  const { attention, falseDisputes } = useMemo(() => {
-    const attention = items.filter(
-      (i) => i.proposedStatus === "disputed" || i.proposedStatus === "needs_human_review",
-    );
-    const falseDisputes = items.filter((i) => i.proposedStatus === "signed");
-    return { attention, falseDisputes };
+  const { attention, falseDisputes, unanalyzed } = useMemo(() => {
+    const attention: AnalyzedReconcileItem[] = [];
+    const falseDisputes: AnalyzedReconcileItem[] = [];
+    const unanalyzed: UnanalyzedReconcileItem[] = [];
+    for (const i of items) {
+      if (i.kind === "unanalyzed") {
+        unanalyzed.push(i);
+      } else if (
+        i.proposedStatus === "disputed" ||
+        i.proposedStatus === "needs_human_review"
+      ) {
+        attention.push(i);
+      } else if (i.proposedStatus === "signed") {
+        falseDisputes.push(i);
+      }
+    }
+    return { attention, falseDisputes, unanalyzed };
   }, [items]);
 
   const counts = useMemo(() => {
@@ -61,6 +82,7 @@ export function ReconcileView({
     let needsReview = 0;
     let confirmedReal = 0;
     for (const i of items) {
+      if (i.kind !== "analyzed") continue;
       if (i.proposedStatus === "signed") likelyFalse++;
       else if (i.proposedStatus === "needs_human_review") needsReview++;
       else if (i.proposedStatus === "disputed") confirmedReal++;
@@ -69,7 +91,9 @@ export function ReconcileView({
   }, [items]);
 
   const total = items.length;
-  const falsePct = total > 0 ? Math.round((counts.likelyFalse / total) * 100) : 0;
+  const analyzedTotal = total - unanalyzed.length;
+  const falsePct =
+    analyzedTotal > 0 ? Math.round((counts.likelyFalse / analyzedTotal) * 100) : 0;
   const reviewedCount = reviewed.size;
   const reviewedPct = total > 0 ? (reviewedCount / total) * 100 : 0;
   const queueCleared = total > 0 && reviewedCount === total;
@@ -101,12 +125,21 @@ export function ReconcileView({
           {total} settlements are flagged disputed. AI analysis:{" "}
           <span className="text-brand-700 font-medium">{counts.likelyFalse} likely false</span>,{" "}
           <span className="text-amber-700 font-medium">{counts.needsReview} need review</span>,{" "}
-          <span className="text-rose-700 font-medium">{counts.confirmedReal} confirmed real</span>.
+          <span className="text-rose-700 font-medium">{counts.confirmedReal} confirmed real</span>
+          {unanalyzed.length > 0 && (
+            <>
+              ,{" "}
+              <span className="text-ink-600 font-medium">
+                {unanalyzed.length} not yet analyzed
+              </span>
+            </>
+          )}
+          .
         </p>
       </div>
 
       {/* Headline callout */}
-      {total > 0 && (
+      {analyzedTotal > 0 && (
         <div className="relative overflow-hidden rounded-xl border border-brand-200/60 bg-gradient-to-br from-brand-50/60 to-canvas p-8 mb-12">
           <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-brand-500 to-brand-700" />
           <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-brand-100/30 rounded-full blur-2xl" />
@@ -126,8 +159,10 @@ export function ReconcileView({
                   {counts.likelyFalse}
                 </span>{" "}
                 of{" "}
-                <span className="font-mono tabular font-semibold">{total}</span>{" "}
-                disputes{" "}
+                <span className="font-mono tabular font-semibold">
+                  {analyzedTotal}
+                </span>{" "}
+                analyzed disputes{" "}
                 <span className="text-ink-500">
                   ({falsePct}%)
                 </span>{" "}
@@ -261,6 +296,52 @@ export function ReconcileView({
         </section>
       )}
 
+      {/* Not yet analyzed group: no verdict in cache */}
+      {unanalyzed.length > 0 && (
+        <section className="mb-10">
+          <div className="flex items-baseline justify-between mb-5">
+            <div>
+              <h2
+                className="font-display text-[24px] font-medium text-ink-900"
+                style={{ letterSpacing: "-0.02em" }}
+              >
+                Not yet analyzed
+              </h2>
+              <p className="text-[12.5px] text-ink-500 mt-1 max-w-xl leading-relaxed">
+                No cached AI verdict matches these settlement IDs — likely
+                because the database was reseeded since{" "}
+                <code className="font-mono text-[10px] bg-ink-100/60 px-1 py-0.5 rounded">
+                  data/reconciliations.json
+                </code>{" "}
+                was generated. Run{" "}
+                <code className="font-mono text-[10px] bg-ink-100/60 px-1 py-0.5 rounded">
+                  npm run reconcile
+                </code>{" "}
+                with{" "}
+                <code className="font-mono text-[10px] bg-ink-100/60 px-1 py-0.5 rounded">
+                  ANTHROPIC_API_KEY
+                </code>{" "}
+                set to regenerate.
+              </p>
+            </div>
+            <span className="text-[11px] font-mono tabular text-ink-400">
+              {unanalyzed.length}{" "}
+              {unanalyzed.length === 1 ? "item" : "items"}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {unanalyzed.map((item) => (
+              <UnanalyzedReconcileCard
+                key={item.settlementId}
+                item={item}
+                reviewed={reviewed.has(item.settlementId)}
+                onConfirm={() => confirm(item.settlementId)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {total === 0 && (
         <div className="py-20 text-center">
           <ScanSearch className="h-8 w-8 text-ink-200 mx-auto mb-3" />
@@ -283,7 +364,7 @@ function ReconcileCard({
   reviewed,
   onConfirm,
 }: {
-  item: ReconcileItem;
+  item: AnalyzedReconcileItem;
   reviewed: boolean;
   onConfirm: () => void;
 }) {
@@ -352,6 +433,72 @@ function ReconcileCard({
               <Button variant="secondary" size="sm" onClick={onConfirm}>
                 <Check className="h-3.5 w-3.5" />
                 Confirm
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UnanalyzedReconcileCard({
+  item,
+  reviewed,
+  onConfirm,
+}: {
+  item: UnanalyzedReconcileItem;
+  reviewed: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <Card
+      className={cn(
+        "transition-all duration-200 border-dashed",
+        reviewed && "opacity-50",
+      )}
+    >
+      <CardContent className="px-5 py-4">
+        <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2.5 mb-3">
+              <h3 className="text-[15px] font-semibold text-ink-900 truncate">
+                {item.artistName}
+              </h3>
+              <span className="text-[12px] text-ink-400 tabular">
+                {item.showDateFormatted}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-3">
+              <PlainBadge variant="rose">Disputed</PlainBadge>
+              <ArrowRight className="h-3 w-3 text-ink-300" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-ink-100/60 text-ink-600 text-[11px] font-medium">
+                <HelpCircle className="h-3 w-3" />
+                Not yet analyzed
+              </span>
+            </div>
+
+            <p className="text-[13px] text-ink-600 leading-relaxed">
+              No cached verdict for this settlement ID. Regenerate verdicts
+              with{" "}
+              <code className="font-mono text-[11px] bg-ink-100/60 px-1 py-0.5 rounded">
+                npm run reconcile
+              </code>{" "}
+              to populate this item.
+            </p>
+          </div>
+
+          <div className="shrink-0">
+            {reviewed ? (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-ink-100 text-ink-700 ring-1 ring-inset ring-ink-200/60 text-[12px] font-medium">
+                <Check className="h-3.5 w-3.5" />
+                Acknowledged
+              </div>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={onConfirm}>
+                <Check className="h-3.5 w-3.5" />
+                Acknowledge
               </Button>
             )}
           </div>

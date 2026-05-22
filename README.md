@@ -63,6 +63,10 @@ You'll see something like:
 ✓ Ready in 1.2s
 ```
 
+The repo ships with a **pre-seeded database** (`data/greenroom.db`) and the **AI verdicts already cached** (`data/reconciliations.json`) — both are committed. The app runs out of the box, end to end, with **no API key required**.
+
+> **Heads up:** Running `npm run db:reset` reseeds with fresh **random** data and will desync the cached AI verdicts (they're keyed by settlement ID). If you reseed, regenerate the verdicts with `npm run reconcile` — that requires `ANTHROPIC_API_KEY` in `.env.local`. For everyday reviewers and graders: don't run `db:reset`; the committed data is the intended demo.
+
 ### 5. Open it in your browser
 
 Go to **[http://localhost:3000](http://localhost:3000)**.
@@ -84,6 +88,7 @@ You're logged in automatically as **Mariana Reyes**, lead booker at The Crescent
 | `/shows/[id]/settle` | The in-app settlement worksheet. **Try it on a few shows.** |
 | `/artists` | Roster of artists who've played the venue, bucketed by frequency. |
 | `/reports` | Aggregate metrics. The numbers Pri (the CEO) is watching. |
+| `/reconcile` | AI dispute review queue — flags mislabeled disputes. |
 | `/context` | Orientation for you, the candidate. Linked from the sidebar. |
 
 ### Recommended path your first time through
@@ -159,6 +164,7 @@ app/
   shows/[id]/settle/        # The settlement worksheet (hero number layout)
   artists/                  # Artist roster (card grid with genre dots)
   reports/                  # Aggregate metrics + craft gap analysis
+  reconcile/                # AI dispute review queue (reads cached verdicts)
   icon.svg                  # Brand favicon
   opengraph-image.tsx       # Social share image
 components/
@@ -172,11 +178,16 @@ lib/
   dealMath.ts               # The settlement engine (deliberately incomplete)
   queries.ts                # Server-side data fetching (past shows only)
   format.ts                 # Money + date helpers
+  reconcile.ts              # AI verdict generator — prompts Claude on a disputed settlement
 db/
   schema.ts                 # All tables, commented
   seed.ts                   # The 24-month synthetic seed
   index.ts                  # libsql + Drizzle client
-data/                       # Markdown context + greenroom.db
+scripts/
+  reset-db.mjs              # Drops data/greenroom.db with a friendly lock-error message
+  generate-reconciliations.ts  # Runs reconcile.ts over every disputed show, writes the cache
+  test-reconcile.ts         # Smoke test for the reconcile prompt on a sample settlement
+data/                       # Markdown context + greenroom.db + reconciliations.json
 ```
 
 ---
@@ -194,15 +205,36 @@ Everything is deliberately conventional. Use Cursor, Claude Code, or any other A
 
 ---
 
-## How to submit
+## Settlement reconciliation
 
-When you're done:
+The `feat/settlement-truth-layer` branch adds an AI-powered dispute review layer. The premise: the `disputed` status in this venue's data is unreliable — settlements get flipped to `disputed` by a follow-up question, a workflow artifact, or a manual misclick, even when the tour manager signed off positively at the table. The status sticks, and the prose tells a different story.
 
-1. **Push your branch.** `git add . && git commit -m "your message" && git push`
-2. **Send the hiring contact:**
-   - The link to your forked repo
-   - Your 3–5 page PRD-quality memo (PDF, Notion, or Google Doc)
-   - A 5–10 minute Loom walking us through the prototype and memo together
+For every settlement currently flagged `disputed`, the reconciler reads the human-written **sign-off text** and **notes** and judges whether the dispute is real or a false positive. It returns:
+
+- a **proposed status** — `signed` (the sign-off was positive and there's no real contested issue), `disputed` (a genuine objection), or `needs_human_review` (mixed signals);
+- a **confidence score** (0–1);
+- the **exact phrases** from the sign-off or notes it relied on, so every verdict is auditable.
+
+Two surfaces:
+
+- **`/reconcile`** — dispute review queue. Each disputed past settlement appears with its AI verdict, evidence quotes, and a confirm action. Likely-false-positive settlements can be cleared in bulk.
+- **`/reports`** — adds a **recorded-vs-reconciled** comparison: how many settlements the database calls disputed, vs. how many the AI thinks are real disputes after reading the prose.
+
+The AI verdicts are **pre-computed and committed** to `data/reconciliations.json`, and the database is pre-seeded and committed at `data/greenroom.db`. The verdicts are keyed by settlement ID and match the committed database exactly, so the app runs end-to-end **without an API key**. Standard setup is enough:
+
+```bash
+npm install
+npm run dev
+```
+
+### Regenerating the verdicts
+
+The seed is non-deterministic — every `npm run db:reset` produces **different random** settlement IDs, which desync the cached verdicts. If you reseed (or change the reconciliation prompt), regenerate:
+
+1. Add `ANTHROPIC_API_KEY=...` to `.env.local`
+2. Run `npm run reconcile`
+
+This re-runs the model over every disputed past show and overwrites `data/reconciliations.json`. Until you do, the `/reconcile` page will show items as "not yet analyzed" for any disputed settlement whose ID isn't in the cache.
 
 ---
 
@@ -242,7 +274,9 @@ Reset the database:
 npm run db:reset
 ```
 
-This drops the SQLite file and regenerates 24 months of data. Takes ~5 seconds. Deterministic — same data every time.
+This drops the SQLite file and regenerates 24 months of data. Takes ~5 seconds.
+
+> **Note:** The seed is **random** — `db:reset` produces a different dataset each time, and the cached AI verdicts in `data/reconciliations.json` will no longer match the new settlement IDs. The `/reconcile` page handles this by showing affected items as "not yet analyzed." To restore the verdicts, run `npm run reconcile` (requires `ANTHROPIC_API_KEY` in `.env.local`).
 
 ### Page looks ugly or buttons aren't visible
 

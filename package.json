@@ -9,8 +9,9 @@
     "lint": "eslint",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx db/seed.ts",
-    "db:reset": "rm -f data/greenroom.db && drizzle-kit push && tsx db/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:reset": "node scripts/reset-db.mjs && drizzle-kit push && tsx db/seed.ts",
+    "db:studio": "drizzle-kit studio",
+    "reconcile": "tsx scripts/generate-reconciliations.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
